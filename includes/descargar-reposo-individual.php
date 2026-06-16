@@ -24,6 +24,12 @@ $hoy = date('Y-m-d');
 $esVigente = strtotime($datos['vencimiento']) >= strtotime($hoy);
 $estado = $esVigente ? 'Vigente' : 'Vencido';
 
+// Calcular días totales de reposo
+$f_inicio = new DateTime($datos['expedicion']);
+$f_fin = new DateTime($datos['vencimiento']);
+$intervalo = $f_inicio->diff($f_fin);
+$dias_totales = $intervalo->days + 1;
+
 class PDF extends FPDF
 {
     function Header()
@@ -66,11 +72,17 @@ $pdf->Cell(0, 12, utf8_decode($datos['cedula']), 1, 1, 'L');
 $pdf->Cell(60, 12, utf8_decode('Cargo:'), 1, 0, 'L', true);
 $pdf->Cell(0, 12, utf8_decode($datos['cargo']), 1, 1, 'L');
 
+$pdf->Cell(60, 12, utf8_decode('Patología:'), 1, 0, 'L', true);
+$pdf->Cell(0, 12, utf8_decode($datos['patologia']), 1, 1, 'L');
+
 $pdf->Cell(60, 12, utf8_decode('Fecha de Expedición:'), 1, 0, 'L', true);
 $pdf->Cell(0, 12, date('d/m/Y', strtotime($datos['expedicion'])), 1, 1, 'L');
 
 $pdf->Cell(60, 12, utf8_decode('Fecha de Vencimiento:'), 1, 0, 'L', true);
 $pdf->Cell(0, 12, date('d/m/Y', strtotime($datos['vencimiento'])), 1, 1, 'L');
+
+$pdf->Cell(60, 12, utf8_decode('Días Totales de Reposo:'), 1, 0, 'L', true);
+$pdf->Cell(0, 12, $dias_totales, 1, 1, 'L');
 
 $pdf->Ln(20);
 $pdf->SetFont('Arial', 'I', 10);

@@ -41,24 +41,17 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 </a>
             </li>
             <li>
-                <a href="#" class="<?= $currentPage == 'estudiantes.php' ? 'selected' : '' ?>">
-                    <i class="fa-solid fa-users icons-header"></i>
-                    <span>Estudiantes</span>
+                <a href="Inscripciones.php" class="<?= $currentPage == 'inscripciones.php' ? 'selected' : '' ?>">
+                    <i class="fa-solid fa-address-card icons-header"></i>
+                    <span>Inscripciones</span>
                 </a>
-                <ul>
-                    <li>
-                        <a href="Inscripciones.php" class="<?= $currentPage == 'inscripciones.php' ? 'selected' : '' ?>">
-                            <i class="fa-solid fa-address-card icons-header"></i>
-                            <span>Inscripciones</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="notas.php" class="<?= $currentPage == 'notas.php' ? 'selected' : '' ?>">
-                            <i class="fa-solid fa-rectangle-list icons-header"></i>
-                            <span>Notas</span>
-                        </a>
-                    </li>
-                </ul>
+            </li>
+            <li>
+                <a href="notas.php" class="<?= $currentPage == 'notas.php' ? 'selected' : '' ?>">
+                    <i class="fa-solid fa-rectangle-list icons-header"></i>
+                    <span>Notas</span>
+                </a>
+            </li>
             </li>
         </ul>
     </nav>

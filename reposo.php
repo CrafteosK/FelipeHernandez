@@ -8,6 +8,7 @@
         $id_trabajador = $_POST['trabajador'];
         $expedicion = $_POST['expedicion'];
         $vencimiento = $_POST['vencimiento'];
+        $patologia = mysqli_real_escape_string($enlace, trim($_POST['patologia']));
 
         // 1. Obtener la información del trabajador seleccionado
         $consultaInfo = "SELECT t.*, c.nombre AS cargo_nombre 
@@ -17,6 +18,12 @@
         $resultadoInfo = mysqli_query($enlace, $consultaInfo);
 
         if ($rowInfo = mysqli_fetch_array($resultadoInfo)) {
+            // Validación del lado del servidor para la patología
+            if (empty($patologia)) {
+                echo '<script>alert("Error: La patología es obligatoria para registrar el reposo."); window.history.back();</script>';
+                exit;
+            }
+
             $nombre = $rowInfo['nombre'];
             $apellido = $rowInfo['apellido'];
             $cedula = $rowInfo['cedula'];
@@ -24,8 +31,8 @@
             $cargo = $rowInfo['cargo_nombre'];
 
             // Insertar en la tabla reposo_medico
-            $insertarReposo = "INSERT INTO reposo_medico (nombre, apellido, cedula, telefono, cargo, expedicion, vencimiento) 
-                                VALUES ('$nombre', '$apellido', '$cedula', '$telefono', '$cargo', '$expedicion', '$vencimiento')";
+            $insertarReposo = "INSERT INTO reposo_medico (nombre, apellido, cedula, telefono, cargo, patologia, expedicion, vencimiento) 
+                                VALUES ('$nombre', '$apellido', '$cedula', '$telefono', '$cargo', '$patologia', '$expedicion', '$vencimiento')";
             if(mysqli_query($enlace, $insertarReposo)) {
                 echo '<script>alert("Reposo médico registrado correctamente"); window.location = "reposo.php";</script>';
             } else {
@@ -154,8 +161,15 @@
                                             <input type="date" name="expedicion" id="expedicion" class="form-control" required>
                                         </div>
                                         <div class="mb-3">
+                                            <label for="patologia" class="form-label">Patología / Motivo</label>
+                                            <textarea name="patologia" id="patologia" class="form-control" placeholder="Describa la patología que presenta el trabajador" required></textarea>
+                                        </div>
+                                        <div class="mb-3">
                                             <label for="vencimiento" class="form-label">Fecha de Vencimiento</label>
                                             <input type="date" name="vencimiento" id="vencimiento" class="form-control" required>
+                                        </div>
+                                        <div class="alert alert-info py-2">
+                                            Total de días: <b id="preview-dias">0</b>
                                         </div>
                                     </div>
                                     <div class="modal-footer">
@@ -181,8 +195,10 @@
                             <th>Cédula</th>
                             <th>Teléfono</th>
                             <th>Cargo</th>
+                            <th>Patología</th>
                             <th>Fecha de Expedición</th>
                             <th>Fecha de Vencimiento</th>
+                            <th>Días</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
@@ -196,6 +212,12 @@
                             $esVigente = strtotime($row['vencimiento']) >= strtotime($hoy);
                             $estado = $esVigente ? 'Vigente' : 'Vencido';
                             $claseEstado = $esVigente ? 'estado-vigente' : 'estado-vencido';
+
+                            $f_inicio = new DateTime($row['expedicion']);
+                            $f_fin = new DateTime($row['vencimiento']);
+                            $intervalo = $f_inicio->diff($f_fin);
+                            $dias_totales = $intervalo->days + 1;
+
                             echo '<tr>';
                             echo '<td>'.$contador.'</td>';
                             echo '<td>'.$row['nombre'].'</td>';
@@ -203,8 +225,10 @@
                             echo '<td>'.$row['cedula'].'</td>';
                             echo '<td>'.$row['telefono'].'</td>';
                             echo '<td>'.$row['cargo'].'</td>';
+                            echo '<td>'.$row['patologia'].'</td>';
                             echo '<td>'.$row['expedicion'].'</td>';
                             echo '<td>'.$row['vencimiento'].'</td>';
+                            echo '<td>'.$dias_totales.'</td>';
                             echo '<td><span class="badge-estado ' . $claseEstado . '">' . $estado . '</span></td>';
                             echo '<td>
                                     <a href="includes/descargar-reposo-individual.php?id='.$row['id'].'" class="btn btn-info btn-sm" title="Descargar Comprobante" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
@@ -269,6 +293,20 @@
             this.form.submit();
         }
     });
+    </script>
+    <script>
+    function calcularDiasReposo() {
+        const exp = $('#expedicion').val();
+        const ven = $('#vencimiento').val();
+        if (exp && ven) {
+            const start = new Date(exp);
+            const end = new Date(ven);
+            const diffTime = end - start;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            $('#preview-dias').text(diffDays > 0 ? diffDays : 0);
+        }
+    }
+    $('#expedicion, #vencimiento').on('change', calcularDiasReposo);
     </script>
 </body>
 </html>

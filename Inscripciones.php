@@ -2,13 +2,13 @@
     include 'bd/sesion-start.php'; 
     include 'bd/conexion.php';
 
-    // Función para obtener el año escolar actual (Septiembre a Julio)
+    // Función para obtener el año escolar actual (Julio a Junio)
     function obtenerAnnoEscolarActual() {
         $mes = (int)date('n');
         $anio = (int)date('Y');
-        if ($mes >= 9) { // Septiembre en adelante
+        if ($mes >= 7) { // Julio en adelante
             return $anio . "-" . ($anio + 1);
-        } else { // Enero a Julio (Agosto es vacación)
+        } else { // Enero a Junio
             return ($anio - 1) . "-" . $anio;
         }
     }
@@ -20,11 +20,12 @@
         $sexo = $_POST['sexo'];
         $fecha_nacimiento = $_POST['fecha_nacimiento'];
         $grado = $_POST['grado'];
+        $seccion = $_POST['seccion'] ?? '';
         $anno_escolar = $_POST['anno_escolar'];
         $telefono_representante = $_POST['telefono_representante'];
 
-        $insertarInscripcion = "INSERT INTO inscripciones (nombre, apellido, sexo, fecha_nacimiento, grado, anno_escolar, telefono_representante) 
-                                VALUES ('$nombre', '$apellido', '$sexo', '$fecha_nacimiento', '$grado', '$anno_escolar', '$telefono_representante')";
+        $insertarInscripcion = "INSERT INTO inscripciones (nombre, apellido, sexo, fecha_nacimiento, grado, seccion, anno_escolar, telefono_representante) 
+                                VALUES ('$nombre', '$apellido', '$sexo', '$fecha_nacimiento', '$grado', '$seccion', '$anno_escolar', '$telefono_representante')";
 
         if(mysqli_query($enlace, $insertarInscripcion)) {
             echo '<script>alert("Inscripción realizada correctamente"); window.location = "Inscripciones.php";</script>';
@@ -41,10 +42,11 @@
         $sexo = $_POST['sexo'];
         $fecha_nacimiento = $_POST['fecha_nacimiento'];
         $grado = $_POST['grado'];
+        $seccion = $_POST['seccion'] ?? '';
         $anno_escolar = $_POST['anno_escolar'];
         $telefono_representante = $_POST['telefono_representante'];
 
-        $actualizarInscripcion = "UPDATE inscripciones SET nombre='$nombre', apellido='$apellido', sexo='$sexo', fecha_nacimiento='$fecha_nacimiento', grado='$grado', anno_escolar='$anno_escolar', telefono_representante='$telefono_representante' WHERE id='$id'";
+        $actualizarInscripcion = "UPDATE inscripciones SET nombre='$nombre', apellido='$apellido', sexo='$sexo', fecha_nacimiento='$fecha_nacimiento', grado='$grado', seccion='$seccion', anno_escolar='$anno_escolar', telefono_representante='$telefono_representante' WHERE id='$id'";
         if(mysqli_query($enlace, $actualizarInscripcion)) {
             echo '<script>alert("Inscripción actualizada correctamente"); window.location = "Inscripciones.php";</script>';
         } else {
@@ -60,6 +62,17 @@
             echo '<script>alert("Inscripción eliminada correctamente"); window.location = "Inscripciones.php";</script>';
         } else {
             echo '<script>alert("Error al eliminar la inscripción");</script>';
+        }
+    }
+
+    // Lógica para eliminar todas las inscripciones
+    if(isset($_POST['deleteAllInscripcionesBtn'])) {
+        $eliminarTodo = "DELETE FROM inscripciones";
+        if(mysqli_query($enlace, $eliminarTodo)) {
+            mysqli_query($enlace, "DELETE FROM estudiantes_salon");
+            echo '<script>alert("Todas las inscripciones han sido eliminadas correctamente"); window.location = "Inscripciones.php";</script>';
+        } else {
+            echo '<script>alert("Error al eliminar las inscripciones");</script>';
         }
     }
 ?>
@@ -86,16 +99,47 @@
 
             <div class="container-top">
 
-                <!-- Buscador -->
-                <div class="d-flex align-items-center gap-3">
+                <!-- Buscador y Filtros -->
+                <div class="d-flex align-items-center gap-3 flex-wrap">
                     <div class="input-icon" style="width: 250px;">
-                        <input class="form-control me-2" type="search" name="busqueda" id="busqueda" placeholder="Buscar" aria-label="Buscar" autocomplete="off">
+                        <input class="form-control me-2" type="search" name="busqueda" id="busqueda" placeholder="Buscar por nombre..." aria-label="Buscar" autocomplete="off">
                         <i class="fa-brands fa-sistrix"></i>
+                    </div>
+                    
+                    <div style="width: 200px;">
+                        <select id="filtroGrado" class="form-control" data-target="#filtroSeccion">
+                            <option value="">Todos los Grados</option>
+                            <option value="Simoncito Libertador">Simoncito Libertador</option>
+                            <option value="Mi esperanza">Mi esperanza</option>
+                            <option value="inicial">Inicial</option>
+                            <option value="1er grado">1er grado</option>
+                            <option value="2do grado">2do grado</option>
+                            <option value="3ro grado">3ro grado</option>
+                            <option value="4to grado">4to grado</option>
+                            <option value="5to grado">5to grado</option>
+                            <option value="6to grado">6to grado</option>
+                        </select>
+                    </div>
+
+                    <div style="width: 150px;">
+                        <select id="filtroSeccion" class="form-control">
+                            <option value="">Todas las Secciones</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
                     </div>
                 </div>
 
                 <!-- Left -->
                 <div class="left">
+                    <form action="#" method="post" style="display:inline;" onsubmit="return confirm('¿Está completamente seguro de que desea eliminar a TODOS los estudiantes? Esta acción no se puede deshacer y borrará también las asignaciones de salones.');">
+                        <button type="submit" name="deleteAllInscripcionesBtn" class="btn btn-danger btn-pad">
+                            <i class="fa-solid fa-trash-can"></i> Eliminar Todo
+                        </button>
+                    </form>
+
                     <a href="includes/descargar-estudiantes.php" class="btn btn-primary btn-pad">
                         <i class="fa-solid fa-file-pdf"></i> Exportar
                     </a>
@@ -133,18 +177,27 @@
                                           </div>
                                           <div class="mb-3">
                                               <label for="grado" class="form-label">Grado</label>
-                                              <select class="form-control" id="grado" name="grado" required>
+                                              <select class="form-control" id="grado" name="grado" data-target="#seccion" required>
                                                   <option value="" disabled selected>Seleccionar grado</option>
-                                                  <option value="inicial A">Inicial A</option>
-                                                  <option value="inicial B">Inicial B</option>
-                                                  <option value="inicial C">Inicial C</option>
+                                                  <option value="Simoncito Libertador">Simoncito Libertador</option>
+                                                  <option value="Mi esperanza">Mi esperanza</option>
+                                                  <option value="inicial">Inicial</option>
                                                   <option value="1er grado">1er grado</option>
                                                   <option value="2do grado">2do grado</option>
                                                   <option value="3ro grado">3ro grado</option>
                                                   <option value="4to grado">4to grado</option>
                                                   <option value="5to grado">5to grado</option>
                                                   <option value="6to grado">6to grado</option>
-                                                  <option value="Promovido">Promovido</option>
+                                              </select>
+                                          </div>
+                                          <div class="mb-3">
+                                              <label for="seccion" class="form-label">Sección</label>
+                                              <select class="form-control" id="seccion" name="seccion">
+                                                  <option value="" selected>Seleccionar sección</option>
+                                                  <option value="A">A</option>
+                                                  <option value="B">B</option>
+                                                  <option value="C">C</option>
+                                                  <option value="D">D</option>
                                               </select>
                                           </div>
                                           <div class="mb-3">
@@ -183,6 +236,7 @@
                                 <th>Apellido</th>
                                 <th>Fecha Nacimiento</th>
                                 <th>Grado</th>
+                                <th>Sección</th>
                                 <th>Sexo</th>
                                 <th>Año Escolar</th>
                                 <th>Teléfono Representante</th>
@@ -198,7 +252,7 @@
                                     $id_est = $row['id'];
                                     $gradoActual = $row['grado'];
                                     
-                                    $gradosList = ["inicial A", "inicial B", "inicial C", "1er grado", "2do grado", "3ro grado", "4to grado", "5to grado", "6to grado", "Promovido"];
+                                    $gradosList = ["Simoncito Libertador", "Mi esperanza", "inicial", "1er grado", "2do grado", "3ro grado", "4to grado", "5to grado", "6to grado", "Promovido"];
                                     $optionsGrado = '<option value="" disabled>Seleccionar grado</option>';
                                     foreach($gradosList as $g) {
                                         $sel = ($gradoActual == $g) ? "selected" : "";
@@ -211,6 +265,7 @@
                                                     <td>'.$row['apellido'].'</td>
                                                     <td>'.$row['fecha_nacimiento'].'</td>
                                                     <td>'.$row['grado'].'</td>
+                                                    <td>'.$row['seccion'].'</td>
                                                     <td>'.($row['sexo'] == 'M' ? 'M' : 'F').'</td>
                                                     <td>'.$row['anno_escolar'].'</td>
                                                     <td>'.$row['telefono_representante'].'</td>
@@ -250,6 +305,16 @@
                                                                     <label for="grado'.$row['id'].'" class="form-label">Grado</label>
                                                                     <select class="form-control grado-select-edit" id="grado'.$row['id'].'" name="grado" data-target="#seccion'.$row['id'].'" required>
                                                                         '.$optionsGrado.'
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="seccion'.$row['id'].'" class="form-label">Sección</label>
+                                                                    <select class="form-control seccion-select-edit" id="seccion'.$row['id'].'" name="seccion">
+                                                                        <option value="" '.($row['seccion'] == '' ? 'selected' : '').'>Seleccionar sección</option>
+                                                                        <option value="A" '.($row['seccion'] == 'A' ? 'selected' : '').'>A</option>
+                                                                        <option value="B" '.($row['seccion'] == 'B' ? 'selected' : '').'>B</option>
+                                                                        <option value="C" '.($row['seccion'] == 'C' ? 'selected' : '').'>C</option>
+                                                                        <option value="D" '.($row['seccion'] == 'D' ? 'selected' : '').'>D</option>
                                                                     </select>
                                                                 </div>
                                                                 <div class="mb-3">
@@ -322,6 +387,61 @@
         // Vincular tu input de búsqueda personalizado con DataTable
         $('#busqueda').on('keyup', function() {
             table.search(this.value).draw();
+        });
+
+        // Lógica de filtrado personalizada para Grado y Sección en la tabla
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var filterGrado = $('#filtroGrado').val();
+                var filterSeccion = $('#filtroSeccion').val();
+                var rowGrado = data[4] || ""; // Columna 4: Grado
+                var rowSeccion = data[5] || ""; // Columna 5: Sección
+
+                if ((filterGrado === "" || rowGrado === filterGrado) &&
+                    (filterSeccion === "" || rowSeccion === filterSeccion)) {
+                    return true;
+                }
+                return false;
+            }
+        );
+
+        // Redibujar tabla al cambiar los filtros de la barra superior
+        $('#filtroGrado, #filtroSeccion').on('change', function() {
+            table.draw();
+        });
+
+        // Función para validar si es inicial y bloquear sección
+        function validarSeccion(gradoSelect) {
+            const target = $(gradoSelect.data('target'));
+            if (!target.length) return;
+
+            const valor = gradoSelect.val() || '';
+            const valorMinus = valor.toLowerCase();
+            
+            // Resetear visibilidad y estado por defecto
+            target.find('option').show();
+            target.prop('disabled', false);
+
+            // 1. Inhabilitar para Simoncito Libertador o Mi esperanza
+            if (valorMinus.includes('libertador') || valorMinus.includes('esperanza')) {
+                target.prop('disabled', true).val('');
+            }
+            // 2. Habilitar Secciones A y B para "grados"
+            else if (valorMinus.includes('grado')) {
+                target.find('option[value="C"], option[value="D"]').hide();
+                // Si estaba seleccionado C o D, limpiar
+                if (target.val() === 'C' || target.val() === 'D') target.val('');
+            }
+        }
+
+        // Eventos para cambios en Grado (Modales y Barra de Filtros)
+        $('#grado, .grado-select-edit, #filtroGrado').on('change', function() {
+            validarSeccion($(this));
+        });
+
+        // Ejecutar al cargar para los modales de edición que ya tengan datos
+        $('.grado-select-edit').each(function() {
+            validarSeccion($(this));
         });
     });
     </script>
