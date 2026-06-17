@@ -58,6 +58,10 @@ body{
     background-color: #EEEEEE;
 }
 
+.r{
+    width: 150px
+}
+
 .container-input input{
     border: none;
     outline: none;

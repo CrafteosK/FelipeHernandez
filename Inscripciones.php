@@ -13,19 +13,24 @@
         }
     }
 
+    // Obtener el año escolar para el filtro (por defecto el actual)
+    $filtroAnno = isset($_GET['filtroAnno']) ? $_GET['filtroAnno'] : obtenerAnnoEscolarActual();
+
     //logica para agregar inscripcion
     if(isset($_POST['addInscripcionBtn'])) {
         $nombre = $_POST['nombre'];
         $apellido = $_POST['apellido'];
+        $cedula = $_POST['cedula'];
         $sexo = $_POST['sexo'];
         $fecha_nacimiento = $_POST['fecha_nacimiento'];
         $grado = $_POST['grado'];
         $seccion = $_POST['seccion'] ?? '';
         $anno_escolar = $_POST['anno_escolar'];
+        $representante_nombre = $_POST['representante_nombre'];
         $telefono_representante = $_POST['telefono_representante'];
 
-        $insertarInscripcion = "INSERT INTO inscripciones (nombre, apellido, sexo, fecha_nacimiento, grado, seccion, anno_escolar, telefono_representante) 
-                                VALUES ('$nombre', '$apellido', '$sexo', '$fecha_nacimiento', '$grado', '$seccion', '$anno_escolar', '$telefono_representante')";
+        $insertarInscripcion = "INSERT INTO inscripciones (nombre, apellido, cedula, sexo, fecha_nacimiento, grado, seccion, anno_escolar, representante_nombre, telefono_representante) 
+                                VALUES ('$nombre', '$apellido', '$cedula', '$sexo', '$fecha_nacimiento', '$grado', '$seccion', '$anno_escolar', '$representante_nombre', '$telefono_representante')";
 
         if(mysqli_query($enlace, $insertarInscripcion)) {
             echo '<script>alert("Inscripción realizada correctamente"); window.location = "Inscripciones.php";</script>';
@@ -39,14 +44,16 @@
         $id = $_POST['id'];
         $nombre = $_POST['nombre'];
         $apellido = $_POST['apellido'];
+        $cedula = $_POST['cedula'];
         $sexo = $_POST['sexo'];
         $fecha_nacimiento = $_POST['fecha_nacimiento'];
         $grado = $_POST['grado'];
         $seccion = $_POST['seccion'] ?? '';
         $anno_escolar = $_POST['anno_escolar'];
+        $representante_nombre = $_POST['representante_nombre'];
         $telefono_representante = $_POST['telefono_representante'];
 
-        $actualizarInscripcion = "UPDATE inscripciones SET nombre='$nombre', apellido='$apellido', sexo='$sexo', fecha_nacimiento='$fecha_nacimiento', grado='$grado', seccion='$seccion', anno_escolar='$anno_escolar', telefono_representante='$telefono_representante' WHERE id='$id'";
+        $actualizarInscripcion = "UPDATE inscripciones SET nombre='$nombre', apellido='$apellido', cedula='$cedula', sexo='$sexo', fecha_nacimiento='$fecha_nacimiento', grado='$grado', seccion='$seccion', anno_escolar='$anno_escolar', representante_nombre='$representante_nombre', telefono_representante='$telefono_representante' WHERE id='$id'";
         if(mysqli_query($enlace, $actualizarInscripcion)) {
             echo '<script>alert("Inscripción actualizada correctamente"); window.location = "Inscripciones.php";</script>';
         } else {
@@ -75,6 +82,7 @@
             echo '<script>alert("Error al eliminar las inscripciones");</script>';
         }
     }
+    $consultaInscripciones = "SELECT * FROM inscripciones WHERE anno_escolar = '$filtroAnno'";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -104,6 +112,22 @@
                     <div class="input-icon" style="width: 250px;">
                         <input class="form-control me-2" type="search" name="busqueda" id="busqueda" placeholder="Buscar por nombre..." aria-label="Buscar" autocomplete="off">
                         <i class="fa-brands fa-sistrix"></i>
+                    </div>
+
+                    <div style="width: 180px;">
+                        <form action="" method="GET" id="formFiltroAnno">
+                            <select name="filtroAnno" id="filtroAnno" class="form-control" onchange="this.form.submit()">
+                                <?php
+                                // Obtener todos los años registrados + el actual
+                                $qAnnos = "SELECT DISTINCT anno_escolar FROM inscripciones UNION SELECT '".obtenerAnnoEscolarActual()."' ORDER BY anno_escolar DESC";
+                                $rAnnos = mysqli_query($enlace, $qAnnos);
+                                while($a = mysqli_fetch_array($rAnnos)) {
+                                    $sel = ($filtroAnno == $a['anno_escolar']) ? 'selected' : '';
+                                    echo '<option value="'.$a['anno_escolar'].'" '.$sel.'>Año: '.$a['anno_escolar'].'</option>';
+                                }
+                                ?>
+                            </select>
+                        </form>
                     </div>
                     
                     <div style="width: 200px;">
@@ -164,6 +188,10 @@
                                     <?php $anno_sugerido = obtenerAnnoEscolarActual(); ?>
                                     <div class="modal-body">
                                           <div class="mb-3">
+                                              <label for="cedula" class="form-label">Cédula de Identidad o Escolar del Alumno</label>
+                                              <input type="text" class="form-control" id="cedula" name="cedula" required>
+                                          </div>
+                                          <div class="mb-3">
                                               <label for="nombre" class="form-label">Nombre del Estudiante</label>
                                               <input type="text" class="form-control" id="nombre" name="nombre" required>
                                           </div>
@@ -213,7 +241,11 @@
                                               <input type="text" class="form-control" id="anno_escolar" name="anno_escolar" value="<?php echo $anno_sugerido; ?>" required>
                                           </div>
                                           <div class="mb-3">
-                                              <label for="telefono_representante" class="form-label">Teléfono Representante</label>
+                                              <label for="representante_nombre" class="form-label">Nombre y Apellido del Representante</label>
+                                              <input type="text" class="form-control" id="representante_nombre" name="representante_nombre" required>
+                                          </div>
+                                          <div class="mb-3">
+                                              <label for="telefono_representante" class="form-label">Teléfono del Representante</label>
                                               <input type="text" class="form-control" id="telefono_representante" name="telefono_representante" required>
                                           </div>
                                     </div>
@@ -234,18 +266,19 @@
                                 <th>Nº</th>
                                 <th>Nombre</th>
                                 <th>Apellido</th>
+                                <th>Cédula Alumno</th>
                                 <th>Fecha Nacimiento</th>
                                 <th>Grado</th>
                                 <th>Sección</th>
                                 <th>Sexo</th>
                                 <th>Año Escolar</th>
-                                <th>Teléfono Representante</th>
+                                <th>Representante</th>
+                                <th>Teléfono</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php 
-                                $consultaInscripciones = "SELECT * FROM inscripciones";
                                 $resultado = mysqli_query($enlace, $consultaInscripciones);
                                 $contador = 1;
                                 while($row = mysqli_fetch_array($resultado)) {
@@ -263,12 +296,14 @@
                                                     <td>'.$contador.'</td>
                                                     <td>'.$row['nombre'].'</td>
                                                     <td>'.$row['apellido'].'</td>
+                                                    <td>'.($row['cedula'] ?? '').'</td>
                                                     <td>'.$row['fecha_nacimiento'].'</td>
                                                     <td>'.$row['grado'].'</td>
                                                     <td>'.$row['seccion'].'</td>
                                                     <td>'.($row['sexo'] == 'M' ? 'M' : 'F').'</td>
                                                     <td>'.$row['anno_escolar'].'</td>
-                                                    <td>'.$row['telefono_representante'].'</td>
+                                                    <td>'.($row['representante_nombre'] ?? '').'</td>
+                                                    <td>'.($row['telefono_representante'] ?? '').'</td>
                                                     <td>
                                                             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editModal'.$row['id'].'"><i class="fa-solid fa-pen-to-square"></i></button>
                                                             <form action="#" method="post" style="display:inline;" onsubmit="return false;" id="deleteForm'.$row['id'].'">
@@ -289,6 +324,10 @@
                                                         <form action="#" method="post">
                                                             <div class="modal-body">
                                                                 <input type="hidden" name="id" value="'.$row['id'].'">
+                                                                <div class="mb-3">
+                                                                    <label for="cedula'.$row['id'].'" class="form-label">Cédula de Identidad o Escolar</label>
+                                                                    <input type="text" class="form-control" id="cedula'.$row['id'].'" name="cedula" value="'.($row['cedula'] ?? '').'" required>
+                                                                </div>
                                                                 <div class="mb-3">
                                                                     <label for="nombre'.$row['id'].'" class="form-label">Nombre</label>
                                                                     <input type="text" class="form-control" id="nombre'.$row['id'].'" name="nombre" value="'.$row['nombre'].'" required>
@@ -329,8 +368,12 @@
                                                                     <input type="text" class="form-control" id="anno_escolar'.$row['id'].'" name="anno_escolar" value="'.$row['anno_escolar'].'" required>
                                                                 </div>
                                                                 <div class="mb-3">
-                                                                    <label for="telefono_representante'.$row['id'].'" class="form-label">Teléfono Representante</label>
-                                                                    <input type="text" class="form-control" id="telefono_representante'.$row['id'].'" name="telefono_representante" value="'.$row['telefono_representante'].'" required>
+                                                                    <label for="representante_nombre'.$row['id'].'" class="form-label">Nombre y Apellido del Representante</label>
+                                                                    <input type="text" class="form-control" id="representante_nombre'.$row['id'].'" name="representante_nombre" value="'.($row['representante_nombre'] ?? '').'" required>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="telefono_representante'.$row['id'].'" class="form-label">Teléfono del Representante</label>
+                                                                    <input type="text" class="form-control" id="telefono_representante'.$row['id'].'" name="telefono_representante" value="'.($row['telefono_representante'] ?? '').'" required>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">

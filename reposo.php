@@ -24,6 +24,32 @@
                 exit;
             }
 
+            // Configurar zona horaria y obtener fecha actual
+            date_default_timezone_set('America/Caracas');
+            $hoy = date('Y-m-d');
+            $cedula_trabajador = $rowInfo['cedula'];
+
+            // Validar si ya existe un reposo vigente para este trabajador
+            $consultaVigente = "SELECT vencimiento FROM reposo_medico WHERE cedula = '$cedula_trabajador' AND vencimiento >= '$hoy' ORDER BY vencimiento DESC LIMIT 1";
+            $resultadoVigente = mysqli_query($enlace, $consultaVigente);
+
+            if (mysqli_num_rows($resultadoVigente) > 0) {
+                $reposoVigente = mysqli_fetch_assoc($resultadoVigente);
+                echo '<script>alert("No se puede registrar el reposo. El trabajador '.$rowInfo['nombre'].' '.$rowInfo['apellido'].' ya tiene un reposo vigente hasta el '.$reposoVigente['vencimiento'].'."); window.location = "reposo.php";</script>';
+                exit;
+            }
+
+            // Procesar la subida del justificativo (imagen)
+            $nombre_imagen = "";
+            if(isset($_FILES['imagen']) && $_FILES['imagen']['error'] == 0){
+                $dir = "uploads/reposos/";
+                if(!is_dir($dir)) mkdir($dir, 0777, true); // Crear carpeta si no existe
+                
+                $extension = pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION);
+                $nombre_imagen = "reposo_" . $cedula_trabajador . "_" . time() . "." . $extension;
+                move_uploaded_file($_FILES['imagen']['tmp_name'], $dir . $nombre_imagen);
+            }
+
             $nombre = $rowInfo['nombre'];
             $apellido = $rowInfo['apellido'];
             $cedula = $rowInfo['cedula'];
@@ -31,8 +57,8 @@
             $cargo = $rowInfo['cargo_nombre'];
 
             // Insertar en la tabla reposo_medico
-            $insertarReposo = "INSERT INTO reposo_medico (nombre, apellido, cedula, telefono, cargo, patologia, expedicion, vencimiento) 
-                                VALUES ('$nombre', '$apellido', '$cedula', '$telefono', '$cargo', '$patologia', '$expedicion', '$vencimiento')";
+            $insertarReposo = "INSERT INTO reposo_medico (nombre, apellido, cedula, telefono, cargo, patologia, expedicion, vencimiento, imagen) 
+                                VALUES ('$nombre', '$apellido', '$cedula', '$telefono', '$cargo', '$patologia', '$expedicion', '$vencimiento', '$nombre_imagen')";
             if(mysqli_query($enlace, $insertarReposo)) {
                 echo '<script>alert("Reposo médico registrado correctamente"); window.location = "reposo.php";</script>';
             } else {
@@ -138,21 +164,22 @@
                                     <h5 class="modal-title">Agregar Reposo Médico</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
-                                <form action="#" method="post">
+                                <form action="#" method="post" enctype="multipart/form-data">
                                     <div class="modal-body">
                                         <div class="mb-3">
                                             <label for="trabajador" class="form-label">Seleccione un Trabajador</label>
                                             <div class="input-icon">
-                                                <select name="trabajador" id="trabajador" class="form-control" required>
-                                                    <option value="">Seleccione un trabajador</option>
+                                                <input type="text" id="buscarReposoTrabajador" list="listaTrabajadoresReposo" class="form-control" placeholder="Escriba nombre o cédula..." required autocomplete="off">
+                                                <datalist id="listaTrabajadoresReposo">
                                                     <?php 
                                                     $consultaTrabajadores = "SELECT * FROM trabajadores";
                                                     $resultadoTrabajadores = mysqli_query($enlace, $consultaTrabajadores);
                                                     while ($trabajadorRow = mysqli_fetch_array($resultadoTrabajadores)) {
-                                                        echo '<option value="'.$trabajadorRow['id'].'">'.$trabajadorRow['nombre'].' '.$trabajadorRow['apellido'].'</option>'; 
+                                                        echo '<option value="'.$trabajadorRow['nombre'].' '.$trabajadorRow['apellido'].' (C.I: '.$trabajadorRow['cedula'].')" data-id="'.$trabajadorRow['id'].'">'; 
                                                     }
                                                     ?>
-                                                </select>
+                                                </datalist>
+                                                <input type="hidden" name="trabajador" id="id_trabajador_hidden_reposo">
                                                 <i class="fa-solid fa-angle-down"></i>
                                             </div>
                                         </div>
@@ -167,6 +194,10 @@
                                         <div class="mb-3">
                                             <label for="vencimiento" class="form-label">Fecha de Vencimiento</label>
                                             <input type="date" name="vencimiento" id="vencimiento" class="form-control" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="imagen" class="form-label">Justificativo Médico (Imagen)</label>
+                                            <input type="file" name="imagen" id="imagen" class="form-control" accept="image/*">
                                         </div>
                                         <div class="alert alert-info py-2">
                                             Total de días: <b id="preview-dias">0</b>
@@ -200,6 +231,7 @@
                             <th>Fecha de Vencimiento</th>
                             <th>Días</th>
                             <th>Estado</th>
+                            <th>Justificativo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -230,6 +262,11 @@
                             echo '<td>'.$row['vencimiento'].'</td>';
                             echo '<td>'.$dias_totales.'</td>';
                             echo '<td><span class="badge-estado ' . $claseEstado . '">' . $estado . '</span></td>';
+                            echo '<td class="text-center">';
+                            if(!empty($row['imagen'])) {
+                                echo '<a href="uploads/reposos/'.$row['imagen'].'" target="_blank" class="btn btn-sm btn-secondary" title="Ver imagen"><i class="fa-solid fa-image"></i></a>';
+                            } else { echo '---'; }
+                            echo '</td>';
                             echo '<td>
                                     <a href="includes/descargar-reposo-individual.php?id='.$row['id'].'" class="btn btn-info btn-sm" title="Descargar Comprobante" target="_blank"><i class="fa-solid fa-file-pdf"></i></a>
                                   </td>';
@@ -279,6 +316,18 @@
         // Vincular tu input de búsqueda personalizado con DataTable
         $('#busqueda').on('keyup', function() {
             table.search(this.value).draw();
+        });
+
+        // Lógica para vincular el datalist con el input hidden de reposo
+        document.getElementById('buscarReposoTrabajador').addEventListener('input', function() {
+            const val = this.value;
+            const options = document.getElementById('listaTrabajadoresReposo').options;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    document.getElementById('id_trabajador_hidden_reposo').value = options[i].getAttribute('data-id');
+                    break;
+                }
+            }
         });
     });
     </script>

@@ -52,6 +52,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <span>Notas</span>
                 </a>
             </li>
+            <li>
+                <a href="gastos.php" class="<?= $currentPage == 'gastos.php' ? 'selected' : '' ?>">
+                    <i class="fa-solid fa-file-invoice-dollar icons-header"></i>
+                    <span>Finanzas</span>
+                </a>
             </li>
         </ul>
     </nav>

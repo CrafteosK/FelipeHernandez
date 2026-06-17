@@ -23,6 +23,16 @@
             date_default_timezone_set('America/Caracas'); // Ajusta a tu zona horaria
             $fecha = date('Y-m-d');
 
+            // Validar si el trabajador tiene un reposo médico vigente
+            $consultaReposo = "SELECT vencimiento FROM reposo_medico WHERE cedula = '$cedula' AND '$fecha' <= vencimiento ORDER BY vencimiento DESC LIMIT 1";
+            $resultadoReposo = mysqli_query($enlace, $consultaReposo);
+
+            if (mysqli_num_rows($resultadoReposo) > 0) {
+                $reposo = mysqli_fetch_assoc($resultadoReposo);
+                echo '<script>alert("No se puede registrar la asistencia. El trabajador '.$nombre.' '.$apellido.' tiene un reposo médico vigente hasta el '.$reposo['vencimiento'].'."); window.location = "asistencias.php";</script>';
+                exit;
+            }
+
             // Verificar si el trabajador ya tiene una asistencia registrada para hoy
             $verificarAsistenciaHoy = "SELECT COUNT(*) FROM asistencias WHERE cedula = '$cedula' AND fecha = '$fecha'";
             $resultadoVerificacion = mysqli_query($enlace, $verificarAsistenciaHoy);
@@ -154,17 +164,17 @@
                                           <div class="mb-3">
                                               <label for="trabajador" class="form-label">Seleccione un Trabajador</label>
                                               <div class="input-icon">
-                                              <select name="trabajador" id="trabajador" class="form-control" required>
-                                                  <option value="">Seleccione un trabajador</option>
+                                                <input type="text" id="buscarAsistenciaTrabajador" list="listaTrabajadores" class="form-control" placeholder="Escriba nombre o cédula..." required autocomplete="off">
+                                                <datalist id="listaTrabajadores">
                                                     <?php 
                                                     $consultaTrabajadores = "SELECT * FROM trabajadores";
                                                     $resultadoTrabajadores = mysqli_query($enlace, $consultaTrabajadores);
                                                     while ($trabajadorRow = mysqli_fetch_array($resultadoTrabajadores)) {
-                                                        echo '<option value="'.$trabajadorRow['id'].'">'.$trabajadorRow['nombre'].' '.$trabajadorRow['apellido'].'</option>'; 
-                                                  }
-                                                  ?>
-
-                                              </select>
+                                                        echo '<option value="'.$trabajadorRow['nombre'].' '.$trabajadorRow['apellido'].' (C.I: '.$trabajadorRow['cedula'].')" data-id="'.$trabajadorRow['id'].'">'; 
+                                                    }
+                                                    ?>
+                                                </datalist>
+                                                <input type="hidden" name="trabajador" id="id_trabajador_hidden_asistencia">
                                                 <i class="fa-solid fa-angle-down"></i>
                                             </div>
 
@@ -266,6 +276,18 @@
         // Vincular tu input de búsqueda personalizado con DataTable
         $('#busqueda').on('keyup', function() {
             table.search(this.value).draw();
+        });
+
+        // Lógica para vincular el datalist con el input hidden de asistencia
+        document.getElementById('buscarAsistenciaTrabajador').addEventListener('input', function() {
+            const val = this.value;
+            const options = document.getElementById('listaTrabajadores').options;
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === val) {
+                    document.getElementById('id_trabajador_hidden_asistencia').value = options[i].getAttribute('data-id');
+                    break;
+                }
+            }
         });
     });
     </script>

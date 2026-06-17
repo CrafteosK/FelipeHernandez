@@ -39,9 +39,8 @@
         $titulo = $_POST['titulo'];
         $desc = $_POST['descripcion'];
         $fecha = $_POST['fecha'];
-        $proyecto = $_POST['proyecto'];
-        $lapso = $_POST['lapso'];
-        mysqli_query($enlace, "INSERT INTO evaluaciones (id_salon, titulo, descripcion, fecha_actividad, proyecto, lapso) VALUES ('$id_salon', '$titulo', '$desc', '$fecha', '$proyecto', '$lapso')");
+        $proyecto = $_POST['proyecto']; // Nuevo campo para el proyecto
+        mysqli_query($enlace, "INSERT INTO evaluaciones (id_salon, titulo, descripcion, fecha_actividad, proyecto) VALUES ('$id_salon', '$titulo', '$desc', '$fecha', '$proyecto')");
         echo '<script>alert("Evaluación asignada");</script>';
     }
 
@@ -68,13 +67,11 @@
                 ON DUPLICATE KEY UPDATE nota = '$nota_num'";
         mysqli_query($enlace, $sql);
 
-        // Recalcular promedio para el salón y lapso actual
-        $res_ev_info = mysqli_query($enlace, "SELECT id_salon, lapso FROM evaluaciones WHERE id = '$id_ev'");
-        $ev_info = mysqli_fetch_assoc($res_ev_info);
-        $id_salon = $ev_info['id_salon'];
-        $lapso_ev = $ev_info['lapso'];
+        // Recalcular promedio para el salón actual
+        $res_salon = mysqli_query($enlace, "SELECT id_salon FROM evaluaciones WHERE id = '$id_ev'");
+        $id_salon = mysqli_fetch_assoc($res_salon)['id_salon'];
 
-        $q_notas = "SELECT nota FROM notas_evaluaciones WHERE id_estudiante = '$id_est' AND id_evaluacion IN (SELECT id FROM evaluaciones WHERE id_salon = '$id_salon' AND lapso = '$lapso_ev')";
+        $q_notas = "SELECT nota FROM notas_evaluaciones WHERE id_estudiante = '$id_est' AND id_evaluacion IN (SELECT id FROM evaluaciones WHERE id_salon = '$id_salon')";
         $res_n = mysqli_query($enlace, $q_notas);
         $suma = 0; $cant = 0;
         while($n = mysqli_fetch_array($res_n)) {
@@ -98,12 +95,6 @@
     $anno_f = $_GET['anno_escolar'] ?? '';
     $grado_f = $_GET['grado'] ?? '';
     $seccion_f = $_GET['seccion'] ?? '';
-    
-    // Lógica de detección automática de Lapso
-    $mes_actual = (int)date('n');
-    $lapso_auto = ($mes_actual >= 9) ? '1' : (($mes_actual <= 3) ? '2' : '3');
-    
-    $lapso_f = $_GET['lapso'] ?? $lapso_auto;
 
     $info_salon = null;
     $evaluaciones_list = [];
@@ -114,14 +105,16 @@
         $res = mysqli_query($enlace, $q);
         $info_salon = mysqli_fetch_array($res);
 
-        if($info_salon) {
             // Obtener proyectos únicos para el salón actual
             $proyectos_salon = [];
-            $q_proyectos = "SELECT DISTINCT proyecto FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' AND lapso = '$lapso_f' AND proyecto IS NOT NULL AND proyecto != ''";
-            $res_proyectos = mysqli_query($enlace, $q_proyectos);
-            while ($p = mysqli_fetch_assoc($res_proyectos)) $proyectos_salon[] = $p['proyecto'];
+            if ($info_salon) {
+                $q_proyectos = "SELECT DISTINCT proyecto FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' AND proyecto IS NOT NULL AND proyecto != ''";
+                $res_proyectos = mysqli_query($enlace, $q_proyectos);
+                while ($p = mysqli_fetch_assoc($res_proyectos)) $proyectos_salon[] = $p['proyecto'];
+            }
 
-            $q_evs = "SELECT * FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' AND lapso = '$lapso_f' ORDER BY id ASC";
+        if($info_salon) {
+            $q_evs = "SELECT * FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' ORDER BY id ASC";
             $res_evs = mysqli_query($enlace, $q_evs);
             while($ev = mysqli_fetch_array($res_evs)) $evaluaciones_list[] = $ev;
         }
@@ -179,15 +172,7 @@
                             <option value="D" <?= ($seccion_f == 'D' ? 'selected' : '') ?>>D</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label small fw-bold">Lapso</label>
-                        <select name="lapso" class="form-control" required>
-                            <option value="1" <?= ($lapso_f == '1' ? 'selected' : '') ?>>1er Lapso (Sep-Dic)</option>
-                            <option value="2" <?= ($lapso_f == '2' ? 'selected' : '') ?>>2do Lapso (Ene-Mar)</option>
-                            <option value="3" <?= ($lapso_f == '3' ? 'selected' : '') ?>>3er Lapso (Abr-Jun)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1">
+                    <div class="col-md-3">
                         <button type="submit" class="btn btn-primary w-100">Cargar Salón</button>
                     </div>
                 </form>
@@ -199,13 +184,13 @@
                 <div>
                     <h6 class="mb-0 text-primary fw-bold">DOCENTE ASIGNADO:</h6>
                     <span><?php echo "{$info_salon['d_nom']} {$info_salon['d_ape']} - C.I: {$info_salon['d_ced']}"; ?></span>
-                    <?php if (!empty($proyectos_salon)): ?>
-                        <span class="ms-3 text-muted">| Proyecto: <b><?php echo implode(", ", $proyectos_salon); ?></b></span>
-                    <?php endif; ?>
                 </div>
                 <div class="text-end">
                     <h5 class="mb-0 fw-bold"><?php echo "{$info_salon['grado']} - Sección '{$info_salon['seccion']}'"; ?></h5>
                     <small class="text-muted">Año Escolar: <?php echo $info_salon['anno_escolar']; ?></small>
+                    <?php if (!empty($proyectos_salon)): ?>
+                        <br><small class="text-muted">Proyectos: <?php echo implode(", ", $proyectos_salon); ?></small>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -214,7 +199,7 @@
                     <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#estudiantes">Listado de Estudiantes</button>
                 </li>
                 <li class="nav-item">
-                    <a href="includes/generar-boletas.php?anno_escolar=<?= $anno_f ?>&grado=<?= $grado_f ?>&seccion=<?= $seccion_f ?>&lapso=<?= $lapso_f ?>" target="_blank" class="nav-link text-danger fw-bold"><i class="fa-solid fa-file-pdf"></i> Descargar Todas las Boletas</a>
+                    <a href="includes/generar-boletas.php?anno_escolar=<?= $anno_f ?>&grado=<?= $grado_f ?>&seccion=<?= $seccion_f ?>" target="_blank" class="nav-link text-danger fw-bold"><i class="fa-solid fa-file-pdf"></i> Descargar Todas las Boletas</a>
                 </li>
                 <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#evaluaciones">Evaluaciones</button>
@@ -265,7 +250,7 @@
                                         $badgeColor = ($row['nota'] == 'A') ? 'success' : (($row['nota'] == 'B') ? 'primary' : (($row['nota'] == 'C') ? 'info' : (($row['nota'] == 'D') ? 'warning' : 'danger')));
                                         echo "<td class='text-center fw-bold'><span class='badge bg-$badgeColor'>".($row['nota'] ?: 'S/N')."</span></td>";
                                         echo "<td class='text-center'>
-                                                <a href='includes/generar-boletas.php?id_estudiante={$row['id']}&lapso={$lapso_f}' target='_blank' class='btn btn-sm btn-outline-danger' title='Descargar Boleta'><i class='fa-solid fa-file-pdf'></i></a>
+                                                <a href='includes/generar-boletas.php?id_estudiante={$row['id']}' target='_blank' class='btn btn-sm btn-outline-danger' title='Descargar Boleta'><i class='fa-solid fa-file-pdf'></i></a>
                                               </td>";
                                         echo "</tr>";
                                         $c++;
@@ -277,13 +262,8 @@
                 </div>
 
                 <div class="tab-pane fade" id="evaluaciones">
-                    <div class="justify-content-end mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center flex-grow-1 me-4">
-                            <label class="fw-bold me-2 small text-nowrap">Nombre del Proyecto:</label>
-                            <input type="text" id="proyecto_actual" class="form-control" placeholder="Escriba el nombre del proyecto para habilitar evaluaciones..." value="<?php echo !empty($proyectos_salon) ? $proyectos_salon[0] : ''; ?>">
-                        </div>
-                        <button id="btnNuevaEval" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#evalModal"><i class="fa-solid fa-plus"></i> Nueva Evaluación</button>
+                    <div class="d-flex justify-content-end mb-3">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#evalModal"><i class="fa-solid fa-plus"></i> Nueva Evaluación</button>
                     </div>
                     <div class="container-table">
                         <table class="table table-striped" id="tablaEvaluaciones">
@@ -298,7 +278,7 @@
                             </thead>
                             <tbody>
                                 <?php
-                                $q = "SELECT * FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' AND lapso = '$lapso_f' ORDER BY fecha_actividad DESC";
+                                $q = "SELECT * FROM evaluaciones WHERE id_salon = '{$info_salon['id']}' ORDER BY fecha_actividad DESC";
                                 $r = mysqli_query($enlace, $q);
                                 $ce = 1;
                                 while($ev = mysqli_fetch_array($r)): ?>
@@ -327,13 +307,12 @@
                     <div class="modal-content">
                         <form method="POST">
                             <input type="hidden" name="id_salon" value="<?php echo $info_salon['id']; ?>">
-                            <input type="hidden" name="proyecto" id="proyecto_hidden">
-                            <input type="hidden" name="lapso" value="<?php echo $lapso_f; ?>">
                             <div class="modal-header"><h5>Asignar Actividad</h5></div>
                             <div class="modal-body">
                                 <input type="text" name="titulo" class="form-control mb-3" placeholder="Título de la Actividad" required>
                                 <textarea name="descripcion" class="form-control mb-3" placeholder="Descripción breve..." required></textarea>
                                 <input type="date" name="fecha" class="form-control" required>
+                            <input type="text" name="proyecto" class="form-control mt-3" placeholder="Nombre del Proyecto (ej: Dejando Huellas)" required>
                             </div>
                             <div class="modal-footer">
                                 <button name="saveEvalBtn" class="btn btn-primary">Asignar</button>
@@ -547,23 +526,6 @@
                 }
             });
         }
-
-        // Lógica para el nombre del proyecto y habilitar botón
-        function validarProyecto() {
-            const proyecto = $('#proyecto_actual').val().trim();
-            if (proyecto === "") {
-                $('#btnNuevaEval').prop('disabled', true).attr('title', 'Debe ingresar un nombre de proyecto');
-            } else {
-                $('#btnNuevaEval').prop('disabled', false).removeAttr('title');
-                $('#proyecto_hidden').val(proyecto);
-            }
-        }
-
-        $('#proyecto_actual').on('input change', function() {
-            validarProyecto();
-        });
-
-        validarProyecto(); // Ejecutar al cargar
 
         // Ejecutar al cargar para reflejar el filtro actual
         validarSeccion($('#grado'));
