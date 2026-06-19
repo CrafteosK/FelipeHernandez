@@ -103,7 +103,6 @@
 
         <div class="container my-4">
             
-                        <div class="input-icon
             <!-- Centro -->
                 <div class="center"><h1>Asistencias</h1></div>
 

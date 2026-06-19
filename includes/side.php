@@ -28,12 +28,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <span>Reposo Medico</span>
                 </a>
             </li>
-            <li>
+            <!-- <li>
                 <a href="vacaciones.php" class="<?= $currentPage == 'vacaciones.php' ? 'selected' : '' ?>">
                     <i class="fa-solid fa-umbrella-beach"></i>
                     <span>Vacaciones de Vigilantes</span>
                 </a>
-            </li>
+            </li> -->
             <li>
                 <a href="salon.php" class="<?= $currentPage == 'salon.php' ? 'selected' : '' ?>">
                     <i class="fa-solid fa-chalkboard-user icons-header"></i>
@@ -46,12 +46,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                     <span>Inscripciones</span>
                 </a>
             </li>
-            <li>
+            <!--<li>
                 <a href="notas.php" class="<?= $currentPage == 'notas.php' ? 'selected' : '' ?>">
                     <i class="fa-solid fa-rectangle-list icons-header"></i>
                     <span>Notas</span>
                 </a>
-            </li>
+            </li>-->
             <li>
                 <a href="gastos.php" class="<?= $currentPage == 'gastos.php' ? 'selected' : '' ?>">
                     <i class="fa-solid fa-file-invoice-dollar icons-header"></i>

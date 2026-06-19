@@ -33,9 +33,10 @@
                                 VALUES ('$nombre', '$apellido', '$cedula', '$sexo', '$fecha_nacimiento', '$grado', '$seccion', '$anno_escolar', '$representante_nombre', '$telefono_representante')";
 
         if(mysqli_query($enlace, $insertarInscripcion)) {
-            echo '<script>alert("Inscripción realizada correctamente"); window.location = "Inscripciones.php";</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Estudiante Inscrito', 'msg' => 'La inscripción se realizó correctamente.'];
+            header("location:Inscripciones.php");
         } else {
-            echo '<script>alert("Error al realizar la inscripción");</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'error', 'titulo' => 'Error', 'msg' => 'No se pudo procesar la inscripción.'];
         }
     }
 
@@ -55,9 +56,10 @@
 
         $actualizarInscripcion = "UPDATE inscripciones SET nombre='$nombre', apellido='$apellido', cedula='$cedula', sexo='$sexo', fecha_nacimiento='$fecha_nacimiento', grado='$grado', seccion='$seccion', anno_escolar='$anno_escolar', representante_nombre='$representante_nombre', telefono_representante='$telefono_representante' WHERE id='$id'";
         if(mysqli_query($enlace, $actualizarInscripcion)) {
-            echo '<script>alert("Inscripción actualizada correctamente"); window.location = "Inscripciones.php";</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Datos Actualizados', 'msg' => 'La inscripción fue editada con éxito.'];
+            header("location:Inscripciones.php");
         } else {
-            echo '<script>alert("Error al actualizar la inscripción");</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'error', 'titulo' => 'Error', 'msg' => 'No se pudieron actualizar los datos.'];
         }
     }
 
@@ -66,9 +68,10 @@
         $id = $_POST['id'];
         $eliminarInscripcion = "DELETE FROM inscripciones WHERE id='$id'";
         if(mysqli_query($enlace, $eliminarInscripcion)) {
-            echo '<script>alert("Inscripción eliminada correctamente"); window.location = "Inscripciones.php";</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Registro Eliminado', 'msg' => 'El estudiante ha sido removido del sistema.'];
+            header("location:Inscripciones.php");
         } else {
-            echo '<script>alert("Error al eliminar la inscripción");</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'error', 'titulo' => 'Error', 'msg' => 'No se pudo eliminar el registro.'];
         }
     }
 
@@ -77,9 +80,10 @@
         $eliminarTodo = "DELETE FROM inscripciones";
         if(mysqli_query($enlace, $eliminarTodo)) {
             mysqli_query($enlace, "DELETE FROM estudiantes_salon");
-            echo '<script>alert("Todas las inscripciones han sido eliminadas correctamente"); window.location = "Inscripciones.php";</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Base de Datos Limpia', 'msg' => 'Se han eliminado todos los registros de inscripción.'];
+            header("location:Inscripciones.php");
         } else {
-            echo '<script>alert("Error al eliminar las inscripciones");</script>';
+            $_SESSION['notificacion'] = ['tipo' => 'error', 'titulo' => 'Error', 'msg' => 'Hubo un fallo al intentar vaciar la tabla.'];
         }
     }
     $consultaInscripciones = "SELECT * FROM inscripciones WHERE anno_escolar = '$filtroAnno'";
@@ -92,6 +96,7 @@
     <title>Inscripciones - Felipe Hernández</title>
     <link rel="stylesheet" href="fontawesome/fontawesome-free-7.1.0-web/css/all.min.css">
     <link href="datatables/datatables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/notificaciones.css">
     <link rel="stylesheet" href="bootstrap-5.3.8-examples/assets/dist/css/bootstrap.min.css">  <!--Opcional: agrega estilos a las tablas -->
     <link rel="stylesheet" href="css/nav-side.css">
     <link rel="stylesheet" href="css/trabajadores.css">
@@ -403,6 +408,8 @@
     <!-- Scripts personalizados -->
     <script src="js/nav-side.js"></script>
     <script src="js/trabajadores.js"></script>
+    <script src="js/notificaciones.js"></script>
+    <?php include 'includes/notificaciones.php'; ?>
     <script>
     $(document).ready(function() {
         // Inicializar DataTable

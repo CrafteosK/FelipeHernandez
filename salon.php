@@ -42,14 +42,14 @@
         $proyecto = $_POST['proyecto'];
         $lapso = $_POST['lapso'];
         mysqli_query($enlace, "INSERT INTO evaluaciones (id_salon, titulo, descripcion, fecha_actividad, proyecto, lapso) VALUES ('$id_salon', '$titulo', '$desc', '$fecha', '$proyecto', '$lapso')");
-        echo '<script>alert("Evaluación asignada");</script>';
+        $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Actividad Asignada', 'msg' => 'La evaluación se registró correctamente.'];
     }
 
     // 3. Lógica para eliminar evaluación
     if(isset($_POST['deleteEvalBtn'])) {
         $id_ev = $_POST['id_evaluacion'];
         mysqli_query($enlace, "DELETE FROM evaluaciones WHERE id = '$id_ev'");
-        echo '<script>alert("Evaluación eliminada");</script>';
+        $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Eliminado', 'msg' => 'La evaluación fue removida.'];
     }
 
     // 4. Lógica para guardar nota de evaluación y actualizar promedio
@@ -92,7 +92,7 @@
             
             mysqli_query($enlace, "UPDATE inscripciones SET nota = '$letra' WHERE id = '$id_est'");
         }
-        echo '<script>alert("Calificación guardada y promedio actualizado"); window.location.href=window.location.href;</script>';
+        $_SESSION['notificacion'] = ['tipo' => 'exito', 'titulo' => 'Nota Registrada', 'msg' => 'Calificación guardada y promedio actualizado.'];
     }
 
     $anno_f = $_GET['anno_escolar'] ?? '';
@@ -135,6 +135,7 @@
     <title>Salón de Clase - Felipe Hernández</title>
     <link rel="stylesheet" href="fontawesome/fontawesome-free-7.1.0-web/css/all.min.css">
     <link href="datatables/datatables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/notificaciones.css">
     <link rel="stylesheet" href="bootstrap-5.3.8-examples/assets/dist/css/bootstrap.min.css">  <!--Opcional: agrega estilos a las tablas -->
     <link rel="stylesheet" href="css/nav-side.css">
     <link rel="stylesheet" href="css/trabajadores.css">
@@ -454,6 +455,8 @@
     <script src="bootstrap-5.3.8-examples/assets/dist/js/bootstrap.bundle.min.js"></script>
     <script src="datatables/datatables.min.js"></script>
     <script src="js/nav-side.js"></script>
+    <script src="js/notificaciones.js"></script>
+    <?php include 'includes/notificaciones.php'; ?>
     <script>
     $(document).ready(function() {
         var table = $('#tablaSalon').DataTable({

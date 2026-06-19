@@ -17,8 +17,8 @@ body{
 }
 
 .container{
-    width: 800px;
-    height: 500px;
+    width: 1100px;
+    height: 700px;
     display: flex;
     position: relative;
     background-color: white;
@@ -30,6 +30,7 @@ body{
 .container-form{
     width: 100%;
     overflow: hidden;
+    
 }
 
 .container-form form{
@@ -48,7 +49,7 @@ body{
 
 .container-input{
     width: 300px;
-    height: 40px;
+    height: 45px;
     margin-bottom: 10px;
     display: flex;
     justify-content: center;
@@ -59,15 +60,25 @@ body{
 }
 
 .r{
-    width: 150px
+    width: 48%;
 }
 
-.container-input input{
-    border: none;
+.container-input .formulario__input{
+    border: 3px solid transparent;
     outline: none;
     width: 100%;
-    height: 100%;
+    height: 45px;
+    line-height: 45px;
     background-color: inherit;
+    padding: 0 40px 0 10px;
+    transition: 0.3s ease all;
+}
+
+.container-input .formulario__input:focus{
+    border: 3px solid #3AB397;
+    background-color: white;
+    outline: none;
+    box-shadow: 3px 0 30px rgba(58, 179, 151, 0.5);
 }
 
 .container-form a{
@@ -75,6 +86,12 @@ body{
     font-size: 14px;
     margin-bottom: 20px;
     margin-top: 5px;
+}
+
+.logo-image{
+    width: 100px;
+    height: 100px;
+    margin-bottom: 10px;
 }
 
 .button{
@@ -88,6 +105,84 @@ body{
     background-color: #3AB397;
     color: white;
 }
+.formulario{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+
+}
+
+.formulario__grupo-input{
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center; /* centra input y icono verticalmente */
+}
+
+/* Grupo contenedor: apilar input + mensaje de error */
+.formulario__grupo{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px; /* separación entre input y mensaje */
+}
+
+.formulario__input-error{
+    font-size: 12px;
+    margin: 6px 0 0 0;
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    background: #fff;
+    border-radius: 4px;
+    color: #bb2929;
+}
+
+.formulario__input-error-activo{
+    display: block;
+}
+
+.formulario__validacion-estado{
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 300;
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/*validacion de estado*/
+
+.formulario__grupo-correcto .formulario__validacion-estado{
+    color: #1ed12d;
+    opacity: 1;
+}
+
+.formulario__grupo-incorrecto .formulario__validacion-estado{
+    color: #bb2929;
+    opacity: 1;
+}
+
+
+.formulario__grupo-incorrecto .formulario__input-error{
+    border: 1px solid #bb2929;
+    background: #fff7f7;
+    opacity: 1;
+    z-index: 200; /* asegurar que quede sobre otros elementos */
+}
+
+.formulario__grupo-incorrecto .formulario__input{
+    border: 3px solid #bb2929;
+}
+
+/* Ajuste para que el input y el mensaje no se superpongan y el grupo crezca */
+.container-input{height:auto;min-height:45px}
+.formulario__grupo-input{width:100%}
+
 
 /*Animaciones de los formularios*/
 .sign-up{
@@ -128,7 +223,7 @@ body{
     flex-direction: column;
     align-items: center;
     gap: 20px;
-    padding: 0 50px;
+    padding: 0 78px;
     color: white;
     transition: transform 0.5s ease-in-out;
 }
@@ -156,4 +251,79 @@ body{
 }
 .container.toggle .welcome-sign-up{
     transform: translateX(-100%);
+}
+
+/* Error messages and input 'roll' animation */
+.error-msg{
+    color:#d9534f;
+    display:flex;
+    font-size:0.78rem;
+    margin-top:6px;
+    width:100%;
+    box-sizing:border-box;
+    line-height:1.2;
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition: max-height .22s ease, opacity .18s ease;
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+}
+.error-msg.visible{max-height:200px;opacity:1}
+.container-input{transition:transform .18s ease}
+/* No desplazar el input hacia arriba — provoca solapamiento con el mensaje. */
+.container-input.has-error{transform:none;display:flex}
+.container-input.has-error .formulario__input{border-color:#bb2929}
+
+/* Alinea el ancho de los mensajes de error en el formulario de login al ancho del input */
+.sign-in .formulario__grupo{
+    width: 300px;
+}
+.sign-in .formulario__input-error{
+    width: 300px;
+}
+
+/* Asegurar que el icono de validación esté dentro del input y no se superponga al mensaje */
+.formulario__validacion-estado{right:12px}
+
+/*media queries*/
+@media (max-width: 768px) {
+    .container{
+        width: 90%;
+        height: 500px;
+    }
+    .formulario{
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Limita la altura del bloque de campos del registro */
+.form-scrollable {
+    max-height: 260px; /* Ajusta este tamaño según qué tan alto sea el contenedor de tu login */
+    overflow-y: auto;  /* Activa la barra de desplazamiento */
+    padding-right: 8px; 
+    margin-bottom: 15px;
+}
+
+/* Títulos sutiles para separar los bloques de preguntas */
+.section-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    margin: 12px 0 6px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+    text-align: left;
+}
+
+/* Diseño personalizado de la barra de scroll (Opcional, para estética limpia) */
+.form-scrollable::-webkit-scrollbar {
+    width: 5px;
+}
+.form-scrollable::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.form-scrollable::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
 }
